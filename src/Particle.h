@@ -1,47 +1,59 @@
 //
-// Created by marc_ on 10.11.2021.
+// Copyright (C) 2021 Marc Lorenz
 //
 
-#ifndef PARTICLE_H_
-#define PARTICLE_H_
+#pragma once
 
 #include <ostream>
-#include <vector>
+
+#include "Globals.h"
 #include "Vector.h"
 
 class Particle {
-public:
+ public:
+  enum class Type {
+    NONE,
+    BOUNDARY,
+    FLUID
+  };
 
-	enum class ParticleType {
-        NONE,
-        BOUNDARY,
-        FLUID
-    };
+  Particle(double x, double y, double density, Type type);
 
-	Particle(double x, double y, int density, ParticleType type);
+  const Vector &getPos() const;
+  const Vector &getVelocity() const;
+  double getDensity() const;
+  double getMass() const;
+  double getPressure() const;
+  Type getType() const;
+  int getId() const;
 
-	const Vector & getPos() const;
-	const Vector & getVelocity() const;
-	int getDensity() const;
-	int getPressure() const;
-	ParticleType getType() const;
+  void updateNeighbors(const ParticleVector &particles);
+  void updateDensity();
+  void updatePressure();
+  void updateVelocity(double time);
+  void updatePosition(double time);
 
-	friend std::ostream & operator<<(std::ostream & os, const Particle & particle);
-	std::vector<const Particle *> getNeighbours(const std::vector<Particle> & allParticles) const;
+  std::vector<const Particle *> getNeighbours(const ParticleVector &allParticles) const;
+  double getKernelValue(const Particle &other) const;
+  Vector getKernelDerivative(const Particle &other) const;
 
-#ifdef BACHELOR_TEST
-	bool operator==(const Particle & other) const {
-		return this->_pos == other._pos && this->_density == other._density && this->_type == other._type;
-	}
-#endif
+  friend std::ostream &operator<<(std::ostream &os, const Particle &particle);
+  void SetPos(const Vector &pos);
 
-private:
-	Vector _pos;
-	Vector _vel;
-	int _density;
-	int _pressure;
-	ParticleType _type;
+ private:
+  Vector _getPressureAcceleration() const;
+  Vector _getViscosityAcceleration() const;
+
+  Vector _pos;
+  Vector _vel;
+  double _density;
+  double _baseDensity;
+  double _pressure{};
+  double _mass;
+  double _lastUpdate{};
+  Type _type;
+  std::vector<const Particle *> _neighbours;
+  int _id;
+
+  static int _idCounter;
 };
-
-
-#endif //PARTICLE_H_
